@@ -99,19 +99,29 @@ if (empty($code)) {
 // Resolve QR code
 $qrData = resolveQRCode($code);
 
-if ($qrData && !empty($qrData['redirect_url'])) {
+http_response_code(200);
+header('Content-Type: text/html; charset=utf-8');
+
+if (!$qrData) {
+    echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>QR không hợp lệ</title></head><body><h1>Mã QR không hợp lệ</h1><p>Mã QR không tồn tại trong hệ thống.</p></body></html>';
+    exit;
+}
+
+if (!empty($qrData['redirect_url']) && ($qrData['mode'] ?? 'simple') === 'simple') {
     logScan($code, $_SERVER['HTTP_USER_AGENT'], getClientIP());
     header('HTTP/1.1 301 Moved Permanently');
     header('Location: ' . $qrData['redirect_url']);
     exit;
 }
 
-if ($qrData && empty($qrData['redirect_url'])) {
-    http_response_code(200);
-    header('Content-Type: text/html; charset=utf-8');
-    $venue = htmlspecialchars($qrData['venue_name'] ?? '', ENT_QUOTES, 'UTF-8');
-    $codeEscaped = htmlspecialchars($code, ENT_QUOTES, 'UTF-8');
-    echo <<<HTML
+if (($qrData['mode'] ?? 'simple') === 'dashboard') {
+    header('Location: https://review.mistydev.id.vn/qr.html?code=' . rawurlencode($code));
+    exit;
+}
+
+$codeEscaped = htmlspecialchars($code, ENT_QUOTES, 'UTF-8');
+$venue = htmlspecialchars($qrData['venue_name'] ?? '', ENT_QUOTES, 'UTF-8');
+echo <<<HTML
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -139,10 +149,4 @@ if ($qrData && empty($qrData['redirect_url'])) {
 </body>
 </html>
 HTML;
-    exit;
-}
-
-http_response_code(404);
-header('Content-Type: text/html; charset=utf-8');
-echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>QR không hợp lệ</title></head><body><h1>Mã QR không hợp lệ</h1><p>Mã QR không tồn tại trong hệ thống.</p></body></html>';
 exit;
