@@ -1,0 +1,23 @@
+# Enable URL rewriting
+RewriteEngine On
+
+# /r/{code} -> index.php?code={code}
+RewriteRule ^r/([A-Za-z0-9]+)$ index.php?code=$1 [L,QSA]
+
+# Root -> index.php (will redirect to review page if no code)
+RewriteRule ^$ index.php [L]
+
+# Fallback: any other non-file/non-dir request -> index.php?code=...
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?code=$1 [L,QSA]
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Disable directory browsing
+Options -Indexes
